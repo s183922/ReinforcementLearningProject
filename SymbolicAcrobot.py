@@ -33,8 +33,10 @@ class SymbolicAcrobot(AcrobotEnv):
         self.gravity = g
         self.dt = dt
 
+        """ Making parameters (weigth, length etc.) to symbolic variables """
         self.l_1, self.l_2, self.m_1, self.m_2, self.lc1, self.lc2, self.i1, self.i2, self.sym_g = sym.symbols('l_1, l_2, m_1, m_2, lc1, lc2, i1, i2, g')
         
+        """ Putting the true values of the parameters (weight length etc.) into a dictionary for later substitution of real values and symbolic """
         par_map = OrderedDict()
         par_map[self.l_1] = self.LINK_LENGTH_1
         par_map[self.l_2] = self.LINK_LENGTH_2
@@ -50,6 +52,7 @@ class SymbolicAcrobot(AcrobotEnv):
 
         u = symv("u", self.action_size)
         x = symv('x', self.state_size)
+
         """ y is a symbolic variable representing y = f(xs, us, dt) """
         y = self.sym_f_discrete(x, u, self.dt)
         
@@ -62,8 +65,22 @@ class SymbolicAcrobot(AcrobotEnv):
 
     def sym_f_discrete(self, xs, us, dt):
         """
-        Custom Made by Peter
+        Custom Made by Peter :-) See _dsdt in AcrobotEnv
+        Calulates f(x,u) and returns the euler integration x_{k+1} = x_k + dt * f(x,u)
+
+        params:
+        xs: x values for the state. x = [theta1, theta2, dtheta1, dtheta2]
+            - theta1: angle of first link
+            - theta2: angle of second link relativ to the first link
+            - dtheta1: angular velocity of link 1
+            - dtheta2: angular velocity of link 2
+        us: action: [a]
+            - a: action in Real-space (the original acrobot only have discrete actiones though ....)
+        dt: step size for euler integration (0.005)
         """
+
+
+        """ Load all parameters """
         m1 = self.m_1
         m2 = self.m_2
         l1 = self.l_1
@@ -79,6 +96,9 @@ class SymbolicAcrobot(AcrobotEnv):
         dtheta1 = s[2]
         dtheta2 = s[3]
 
+        """ A lot of math and physics ... We use the in book implementation of ddtheta2
+            It is the linearisation of the system dynamics f(x,u)
+         """
         d1 = m1 * lc1 ** 2 + m2 * \
             (l1 ** 2 + lc2 ** 2 + 2 * l1 * lc2 * sym.cos(theta2)) + I1 + I2
         d2 = m2 * (lc2 ** 2 + l1 * lc2 * sym.cos(theta2)) + I2
@@ -98,7 +118,9 @@ class SymbolicAcrobot(AcrobotEnv):
                 / (m2 * lc2 ** 2 + I2 - d2 ** 2 / d1)
         ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
 
+        """ With dtheta1, dtheta2, ddtheta1, ddtheta2 we have f(x,u). xp is euler integration """
         xp = [theta1 + dt * dtheta1, theta2 + dt * dtheta2, dtheta1 + dt * ddtheta1, dtheta2 + dt * ddtheta2]
+        """ Now substitue real values with the symbolic """
         f = [ff.subs(self.par_map) for ff in xp]
         return f
 
@@ -122,33 +144,3 @@ class SymbolicAcrobot(AcrobotEnv):
     def gN(self, x, i=None, compute_gradients=False):  
         v = self.cost.gN(x) # Not gonna lie this is a bit goofy.
         return v[0] if not compute_gradients else v  
-
-
-
-x_goal = np.array([np.pi, 0, 0, 0])
-
-# Instantaneous state cost.
-state_size = 4
-Q = np.diag([100, 1.0, 0, 0.0])
-R = np.array([[0.1]])
-# Terminal state cost.
-Q_terminal = 100 * np.eye(state_size)
-
-# Instantaneous control cost.
-cost = QRCost(Q, R, QN=Q_terminal, x_goal=x_goal)
-
-
-env = SymbolicAcrobot(cost = cost)
-env.reset()
-
-# N = 300
-# x0 = env.state
-# xs, us, J_hist = ilqr(env, N, x0, n_iter=300, use_linesearch=True)
-
-
-env.reset()
-for _ in range(1000):
-    env.render()
-    env.step(env.action_space.sample())
-env.close
-print(env.action_space.sample())
