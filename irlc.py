@@ -63,7 +63,7 @@ def bmatrix(a):
         rv +=  [r'\end{bmatrix}']
         return '\n'.join(rv)
 
-from lazylog import LazyLog
+from utils.lazylog import LazyLog
 
 def load_time_series(experiment, list_obs, max_xticks_to_log=None):
 
@@ -87,7 +87,7 @@ def log_time_series(experiment, list_obs, max_xticks_to_log=None, run_name=None)
                 logz.log_tabular("Episode",n)
             logz.dump_tabular(verbose=False)
 
-from irlc.utils.irlc_plot import main_plot as main_plot
+from utils.irlc_plot import main_plot as main_plot
 
 # def cn_(file_name):
 #     return "cache/"+file_name
