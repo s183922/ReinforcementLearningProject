@@ -4,7 +4,7 @@ This file may not be shared/redistributed freely. Please read copyright notice i
 import matplotlib.pyplot as plt
 import numpy as np
 from cost import QRCost
-from irlc.ex03.dp_cartpole_env import CartpoleSinCosEnvironment
+from dp_cartpole_env import CartpoleSinCosEnvironment
 import time
 from irlc import savepdf
 from ilqr import ilqr_basic, ilqr_linesearch
