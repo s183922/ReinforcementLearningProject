@@ -4,9 +4,9 @@ This file may not be shared/redistributed freely. Please read copyright notice i
 from scipy.optimize import Bounds
 import sympy as sym
 import numpy as np
-from irlc.ex04.ct_env import ContiniousSymbolicEnvironment
-from irlc.ex04.ct_cost import SymbolicQRCost
-from irlc.ex03.dp_cartpole_env import render_cartpole
+from ct_env import ContiniousSymbolicEnvironment
+from ct_cost import SymbolicQRCost
+from dp_cartpole_env import render_cartpole
 
 class ContiniousCartpole(ContiniousSymbolicEnvironment):
     state_size = 4

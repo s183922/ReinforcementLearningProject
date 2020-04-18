@@ -7,7 +7,7 @@ References:
 import sympy as sym
 import numpy as np
 import time
-from irlc.ex03.dp_symbolic_env import symv
+from dp_symbolic_env import symv
 import sys
 import matplotlib.pyplot as plt
 from irlc import savepdf

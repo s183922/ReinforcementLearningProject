@@ -5,7 +5,7 @@ from collections import OrderedDict
 import sympy as sym
 import numpy as np
 from gym.envs.classic_control import rendering
-from irlc.ex03.dp_symbolic_env import DPSymbolicEnvironment
+from dp_symbolic_env import DPSymbolicEnvironment
 
 def dim1(x):
     return np.reshape(x, (x.size,) ) if x is not None else x
