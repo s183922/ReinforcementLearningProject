@@ -63,7 +63,7 @@ def bmatrix(a):
         rv +=  [r'\end{bmatrix}']
         return '\n'.join(rv)
 
-from irlc.utils.lazylog import LazyLog
+from lazylog import LazyLog
 
 def load_time_series(experiment, list_obs, max_xticks_to_log=None):
 
