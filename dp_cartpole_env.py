@@ -4,8 +4,11 @@ This file may not be shared/redistributed freely. Please read copyright notice i
 from collections import OrderedDict
 import sympy as sym
 import numpy as np
+from dp_symbolic_env import symv
 from gym.envs.classic_control import rendering
 from dp_symbolic_env import DPSymbolicEnvironment
+
+
 
 def dim1(x):
     return np.reshape(x, (x.size,) ) if x is not None else x
@@ -52,21 +55,16 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         self.max_bounds = max_bounds
 
         self.l = l
-        self.m_p, self.m_c, self.sym_l, self.sym_g = sym.symbols('m_p, m_c, l, g')
-
-        par_map = OrderedDict()
-        par_map[self.m_p] = mp
-        par_map[self.m_c] = mc
-        par_map[self.sym_l] = l
-        par_map[self.sym_g] = g
-        self.par_map = par_map
+        self.mp_val = mp
+        self.g_val = g
+        self.mc_val = mc
 
         super(CartpoleSinCosEnvironment, self).__init__(dt=dt, cost=cost)
 
     def render(self, x=None):
         # the render function we use assumes parameterization in terms of these.
-        sin_theta = x[2]
-        cos_theta = x[3]
+        sin_theta = np.float(x[2])
+        cos_theta = np.float(x[3])
         theta = np.arctan2(sin_theta, cos_theta)
         x_theta = [x[0], x[1], theta, x[4]]
         render_cartpole(self, x=x_theta, mode="human")
@@ -82,28 +80,34 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
     def x_discrete2x_cont(self, xs):
         return [xs[0], xs[1], sym.atan2(xs[2], xs[3]), xs[4]]
 
-    def sym_f_discrete(self, xs, us, dt):
+    def system_derivatives(self, xs, us):
         """
+        Compute the system derivatives.
+        :params
+            xs: current state
+            us: force
 
-        :param xs: current state
-        :param us: force
-        :param dt: discrete time length
-        :return: next state
+        :return: System derivatives
         """
         min_bounds = self.min_bounds
         max_bounds = self.max_bounds
-        par_map = self.par_map
-        mp = self.m_p
-        mc = self.m_c
-        l = self.sym_l
-        g = self.sym_g
-        x_ = xs[0]
-        x_dot = xs[1]
-        sin_theta = xs[2]
-        cos_theta = xs[3]
-        theta_dot = xs[4]
 
+        # Define dynamics model as per Razvan V. Florian's
+        # "Correct equations for the dynamics of the cart-pole system".
+        # Friction is neglected.
+
+        mp = self.mp_val
+        l = self.l
+        mc = self.mc_val
+        g = self.g_val
+
+        x_dot = xs[1]
+        theta = xs[2]
+        sin_theta = sym.sin(theta)
+        cos_theta = sym.cos(theta)
+        theta_dot = xs[3]
         F = sym.tanh(us[0]) * (max_bounds - min_bounds) / 2.0
+        #F = us[0]
         # Define dynamics model as per Razvan V. Florian's
         # "Correct equations for the dynamics of the cart-pole system".
         # Friction is neglected.
@@ -116,21 +120,77 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         # Eq. (24)
         x_dot_dot = temp - mp * l * theta_dot_dot * cos_theta / (mc + mp)
+        xp = [x_dot,
+              x_dot_dot,
+              theta_dot,
+              theta_dot_dot]
 
-        # Deaugment state for dynamics.
-        theta = sym.atan2(sin_theta, cos_theta)
-        next_theta = theta + dt * theta_dot
+        return xp
 
-        xp = [
-            x_ + x_dot * dt,
-            x_dot + x_dot_dot * dt,
-            sym.sin(next_theta),
-            sym.cos(next_theta),
-            theta_dot * .99 + theta_dot_dot * dt,
-        ]
-        
-        f = [ff.subs(par_map) for ff in xp]  # insert the actual values for length, g, etc. into the equation
-        return f
+    def sym_f_discrete(self, xs, u, dt):
+        """
+        Compute the discrete time system dynamics with Euler Integration
+
+        :params
+            xs: Current State
+            u:  Force
+            dt: Discrete Time Step
+        :return: Next state [x + dt * xdot, xdot + dt * xdotdot, sin(theta + dt * thetadot), cos(theta + dt * thetadot), thetadot + dt * thetadotdot]
+        """
+
+        derives = self.system_derivatives(xs, u)
+        euler = xs * np.array([1, 1, 1, .99]) + dt * np.asarray(derives)
+        euler_expand = [euler[0], euler[1], sym.sin(euler[2]), sym.cos(euler[2]), euler[3]]
+
+        return euler_expand
+
+    def step(self, x0, u_fun, N_steps, method = None):
+        """
+        Computes the next state of system using RK4 integration
+        :param x: Current State
+        :param u: Force
+        :param dt: Time step
+        :return: Next State
+        """
+
+        xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps, method = method)
+        return xs
+
+
+    def Runge_Kutta4(self, x0, u_fun, t0, tF, method=None):
+        N_steps = int(tF - t0)
+        time = np.linspace(t0, tF, N_steps)
+        """ Making System Dynamics time dependent given an interpolation function of the trajectory of discrete actions """
+        u = symv("u", 1)
+        x = symv('x', 4)
+        derivatives = self.system_derivatives(x, u)
+        f_sym = sym.lambdify((tuple(x), tuple(u)), derivatives, 'numpy')
+        f = lambda t, x: f_sym(x, u_fun(t).reshape(-1))
+
+        xs = [np.asarray(x0)]
+        us = [u_fun(t0).reshape(-1)]
+
+        for n in range(N_steps - 1):
+
+            h = self.dt
+            t_current = time[n]
+            x_current = xs[n]
+
+            k1 = h * np.asarray(f(t_current, x_current))
+            k2 = h * np.asarray(f(t_current + h / 2, x_current + k1 / 2))
+            k3 = h * np.asarray(f(t_current + h / 2, x_current + k2 / 2))
+            k4 = h * np.asarray(f(t_current + h, x_current + k3))
+
+            x_next = x_current + 1 / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+            if method == "Euler":
+                x_next = x_current * np.array([1, 1, 1, .99]) + k1
+
+            u_next = u_fun(t_current + h).reshape(-1)
+
+            xs.append(x_next)
+            us.append(u_next)
+        return xs
+
 
     def transform_actions(self, us):
         return np.tanh(us) * (self.max_bounds - self.min_bounds) / 2
@@ -160,7 +220,6 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         theta = np.arctan2(sin_theta, cos_theta)
         return np.hstack([x, x_dot, theta, theta_dot])
-
 
 
 def render_cartpole(env, x=None, mode='human', close=False):
@@ -252,4 +311,4 @@ def render_cartpole(env, x=None, mode='human', close=False):
 
 
 
-env = CartpoleSinCosEnvironment(0.2)
+

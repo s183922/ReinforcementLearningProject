@@ -31,6 +31,7 @@ class ContiniousCartpole(ContiniousSymbolicEnvironment):
         if cost is None:
             cost = c0
 
+
         super(ContiniousCartpole, self).__init__(cost=cost, simple_bounds=simple_bounds)
 
 
@@ -89,6 +90,7 @@ def kelly_swingup(maxForce=50, dist=1.0):
     # you should add constraints for x, u x0 and xF.
     # Remember the x-position can be within [-2*dist, 2*dist]
     # TODO: 4 lines missing.
+
     raise NotImplementedError("")
     cost = SymbolicQRCost(c=1)  # just minimum time
     args = {}

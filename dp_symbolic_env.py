@@ -20,15 +20,19 @@ class DPSymbolicEnvironment:
         self.cost = cost
         """ Initialize symbolic variables representing inputs and actions. """
         u = symv("u", self.action_size)
-        x = symv('x', self.state_size)
+        x = symv('x', self.state_size-1)
+        t = sym.symbols("t")
         """ y is a symbolic variable representing y = f(xs, us, dt) """
-        y = self.sym_f_discrete(x, u, dt)
-        print(y)
+        euler = self.sym_f_discrete(x, u, dt)
+
+    
         """ compute the symbolic derivate of y wrt. z = (x,u): dy/dz """
-        dy_dz = sym.Matrix([[sym.diff(f, zi) for zi in list(x)+list(u)] for f in y])
+        dy_dz = sym.Matrix([[sym.diff(f, zi) for zi in list(x)+list(u)] for f in euler])
         """ Define (numpy) functions giving next state and the derivatives """
         self.f_z = sym.lambdify((tuple(x), tuple(u)), dy_dz, 'numpy')
-        self.f_discrete = sym.lambdify((tuple(x), tuple(u)), y, 'numpy') 
+        self.f_discrete = sym.lambdify((tuple(x), tuple(u)), euler, 'numpy')
+
+
 
     def f(self, x, u, i, compute_jacobian=False): 
         """
@@ -44,15 +48,19 @@ class DPSymbolicEnvironment:
             return fx 
 
     def sym_f_discrete(self, xs, us, dt): 
-        raise NotImplementedError 
+        raise NotImplementedError("")
 
-    def g(self, x, u, i=None, terminal=False, compute_gradients=False): 
+    def system_derivatives(self, xs, us):
+        raise NotImplementedError("")
+
+    def g(self, x, u, i=None, terminal=False, compute_gradients=False):
         v = self.cost.g(x, u, i, terminal=terminal) # Terminal is deprecated, use gN
         return v[0] if not compute_gradients else v 
 
     def gN(self, x, i=None, compute_gradients=False):  
         v = self.cost.gN(x) # Not gonna lie this is a bit goofy.
-        return v[0] if not compute_gradients else v  
+        return v[0] if not compute_gradients else v
+
 
     def render(self, x=None):
         raise NotImplementedError("No render function")
