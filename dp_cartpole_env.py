@@ -69,16 +69,18 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         x_theta = [x[0], x[1], theta, x[4]]
         render_cartpole(self, x=x_theta, mode="human")
 
-    def x_cont2x_discrete(self, xs):
+    def x_cont2x_discrete(self, xs, method = None):
         """
         converts state space with theta to state with sin cos
         :param xs: x with theta in space
         :return:  x with sin and cos
         """
-        return [xs[0], xs[1], sym.sin(xs[2]), sym.cos(xs[2]), xs[3]]
+        if method is None: return [xs[0], xs[1], sym.sin(xs[2]), sym.cos(xs[2]), xs[3]]
+        elif method == "numpy": return [xs[0], xs[1], np.sin(xs[2]), np.cos(xs[2]), xs[3]]
 
-    def x_discrete2x_cont(self, xs):
-        return [xs[0], xs[1], sym.atan2(xs[2], xs[3]), xs[4]]
+    def x_discrete2x_cont(self, xs, method = None):
+        if method is None: return [xs[0], xs[1], sym.atan2(xs[2], xs[3]), xs[4]]
+        elif method == "numpy": return [xs[0], xs[1], np.arctan2(xs[2], xs[3]), xs[4]]
 
     def system_derivatives(self, xs, us):
         """
@@ -89,6 +91,8 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         :return: System derivatives
         """
+        if len(xs) == 5:
+            xs = self.x_discrete2x_cont(xs)
         min_bounds = self.min_bounds
         max_bounds = self.max_bounds
 
@@ -139,6 +143,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         """
 
         derives = self.system_derivatives(xs, u)
+        xs = self.x_discrete2x_cont(xs)
         euler = xs * np.array([1, 1, 1, .99]) + dt * np.asarray(derives)
         euler_expand = [euler[0], euler[1], sym.sin(euler[2]), sym.cos(euler[2]), euler[3]]
 
@@ -153,16 +158,19 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         :return: Next State
         """
 
-        xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps, method = method)
-        return xs
+        xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps+1, method = method)
+
+        return xs[1:]
 
 
     def Runge_Kutta4(self, x0, u_fun, t0, tF, method=None):
+        if len(x0) == 5:
+            x0 = self.x_discrete2x_cont(x0, 'numpy')
         N_steps = int(tF - t0)
         time = np.linspace(t0, tF, N_steps)
         """ Making System Dynamics time dependent given an interpolation function of the trajectory of discrete actions """
-        u = symv("u", 1)
-        x = symv('x', 4)
+        u = symv("u", self.action_size)
+        x = symv('x', self.state_size-1)
         derivatives = self.system_derivatives(x, u)
         f_sym = sym.lambdify((tuple(x), tuple(u)), derivatives, 'numpy')
         f = lambda t, x: f_sym(x, u_fun(t).reshape(-1))
@@ -170,7 +178,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         xs = [np.asarray(x0)]
         us = [u_fun(t0).reshape(-1)]
 
-        for n in range(N_steps - 1):
+        for n in range(N_steps-1):
 
             h = self.dt
             t_current = time[n]
@@ -183,12 +191,16 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
             x_next = x_current + 1 / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
             if method == "Euler":
+                #x_current = self.x_discrete2x_cont(x_current)
                 x_next = x_current * np.array([1, 1, 1, .99]) + k1
+                #x_next = self.x_cont2x_discrete(x_next)
 
             u_next = u_fun(t_current + h).reshape(-1)
 
             xs.append(x_next)
             us.append(u_next)
+
+        xs = np.stack(xs)
         return xs
 
 

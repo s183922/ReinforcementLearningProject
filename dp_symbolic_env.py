@@ -20,7 +20,7 @@ class DPSymbolicEnvironment:
         self.cost = cost
         """ Initialize symbolic variables representing inputs and actions. """
         u = symv("u", self.action_size)
-        x = symv('x', self.state_size-1)
+        x = symv('x', self.state_size)
         t = sym.symbols("t")
         """ y is a symbolic variable representing y = f(xs, us, dt) """
         euler = self.sym_f_discrete(x, u, dt)
@@ -54,10 +54,12 @@ class DPSymbolicEnvironment:
         raise NotImplementedError("")
 
     def g(self, x, u, i=None, terminal=False, compute_gradients=False):
+
         v = self.cost.g(x, u, i, terminal=terminal) # Terminal is deprecated, use gN
         return v[0] if not compute_gradients else v 
 
-    def gN(self, x, i=None, compute_gradients=False):  
+    def gN(self, x, i=None, compute_gradients=False):
+
         v = self.cost.gN(x) # Not gonna lie this is a bit goofy.
         return v[0] if not compute_gradients else v
 
