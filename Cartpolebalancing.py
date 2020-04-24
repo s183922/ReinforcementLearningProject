@@ -23,10 +23,10 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30):
     action_size = 1
     max_force = 5.0
     
-    goal_angle = 0 * np.pi * 2 / 360
-    x_goal = np.array([0.0, 0.0, np.sin(0), np.cos(0), 0.0])
-
-    x0 = np.array([0, 0, np.sin(np.pi), np.cos(np.pi), 0])
+    goal_angle = 0
+    init_angle =  np.pi
+    x_goal = np.array([0.0, 0.0, np.sin(goal_angle), np.cos(goal_angle), 0.0])
+    x0 = np.array([0, 0, np.sin(init_angle), np.cos(init_angle), 0])
     Q = np.diag([1, 0.01, 30, 30, 0.01]) # diag([1.0, 1.0, 1.0, 1.0, 1.0])
     R = 0.01 * np.eye(action_size)
 
@@ -50,7 +50,10 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30):
 
         u[i] += np.random.normal(0.0, scale=sigma, size=None)
 
+        """ Euler dynamics = bad """
         #x_current = env.f(x_current, u[i], i)
+
+        """ Truer dynamics RK4 """
         us = us.reshape(-1)
         x_new = np.arange(len(us))
         u_fun = interp1d(x_new, us)
@@ -64,8 +67,8 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30):
     render_(x,env)
     env.viewer.close()
     import os, sys; os.chdir(sys.path[0])
-    pickle.dump(x, open(f"xs_MPC{time_horizon_length}.pkl", "wb"))
-    pickle.dump(u, open(f"us_MPC{time_horizon_length}.pkl", "wb"))
+    pickle.dump(x, open(f"Trajectories/xs_MPC_{time_horizon_length}_{sigma}.pkl", "wb"))
+    pickle.dump(u, open(f"Trajectories/us_MPC_{time_horizon_length}_{sigma}.pkl", "wb"))
     plt.plot(np.squeeze(x)[:, 4])
     plt.plot(np.squeeze(u))
     plt.legend(["Angle", "Action"],)
