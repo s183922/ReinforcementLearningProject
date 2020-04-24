@@ -3,11 +3,11 @@ This file may not be shared/redistributed freely. Please read copyright notice i
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from cost import QRCost
+from iLQR.cost import QRCost
 from dp_cartpole_env import CartpoleSinCosEnvironment
 import time
-from irlc import savepdf
-from ilqr import ilqr_basic, ilqr_linesearch
+from utils.irlc import savepdf
+from iLQR.ilqr import ilqr_basic, ilqr_linesearch
 
 def ilqr(env, N, x0, n_iter, use_linesearch, verbose=True):
     if not use_linesearch:
@@ -18,7 +18,7 @@ def ilqr(env, N, x0, n_iter, use_linesearch, verbose=True):
     return xs, us, J_hist
 
 def cartpole(use_linesearch):
-    dt = 0.05
+    dt = 0.02
     pole_length = 1.0
     x_goal = np.array([0.0, 0.0, np.sin(0), np.cos(0), 0.0])
 
@@ -29,13 +29,13 @@ def cartpole(use_linesearch):
     Q[1, 1] = Q[4, 4] = 0.0
     Q[0, 2] = Q[2, 0] = pole_length
     Q[2, 2] = Q[3, 3] = pole_length**2
-    Q = np.diag([0.0, 1.0, 1.0, 0.0, 0.0])
+    Q = np.diag([1, 0.001, 30, 30, 0.001])
     R = np.array([[0.1]])
     # Terminal state cost.
     Q_terminal = 1000 * np.eye(state_size)
 
     # Instantaneous control cost.
-    cost = QRCost(Q, R, QN=Q_terminal, x_goal=x_goal)
+    cost = QRCost(Q, R, QN=None, x_goal=x_goal)
 
     env = CartpoleSinCosEnvironment(dt=dt, cost=cost, l=pole_length)
 

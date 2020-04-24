@@ -111,7 +111,6 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         cos_theta = sym.cos(theta)
         theta_dot = xs[3]
         F = sym.tanh(us[0]) * (max_bounds - min_bounds) / 2.0
-        #F = us[0]
         # Define dynamics model as per Razvan V. Florian's
         # "Correct equations for the dynamics of the cart-pole system".
         # Friction is neglected.
@@ -159,7 +158,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         """
 
         xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps+1, method = method)
-
+        xs = np.array([self.x_cont2x_discrete(x, "numpy") for x in xs])
         return xs[1:]
 
 
@@ -189,11 +188,10 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
             k3 = h * np.asarray(f(t_current + h / 2, x_current + k2 / 2))
             k4 = h * np.asarray(f(t_current + h, x_current + k3))
 
-            x_next = x_current + 1 / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+            x_next = x_current * np.array([1, 1, 1, .99]) + 1 / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
             if method == "Euler":
-                #x_current = self.x_discrete2x_cont(x_current)
                 x_next = x_current * np.array([1, 1, 1, .99]) + k1
-                #x_next = self.x_cont2x_discrete(x_next)
+
 
             u_next = u_fun(t_current + h).reshape(-1)
 

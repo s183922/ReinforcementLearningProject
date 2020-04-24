@@ -8,7 +8,7 @@ References:
 """
 import warnings
 import numpy as np
-from dlqr import LQR
+from iLQR.dlqr import LQR
 import matplotlib.pyplot as plt
 import time
 
