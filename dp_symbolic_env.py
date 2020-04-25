@@ -28,6 +28,7 @@ class DPSymbolicEnvironment:
     
         """ compute the symbolic derivate of y wrt. z = (x,u): dy/dz """
         dy_dz = sym.Matrix([[sym.diff(f, zi) for zi in list(x)+list(u)] for f in euler])
+        #dy_dzdz = sym.Matrix([[sym.diff(f, zi) for zi in list(x)+list(u)] for f in dy_dz])
         """ Define (numpy) functions giving next state and the derivatives """
         self.f_z = sym.lambdify((tuple(x), tuple(u)), dy_dz, 'numpy')
         self.f_discrete = sym.lambdify((tuple(x), tuple(u)), euler, 'numpy')
@@ -42,7 +43,7 @@ class DPSymbolicEnvironment:
         fx = np.asarray( self.f_discrete(x, u) )
         if compute_jacobian:
             J = self.f_z(x, u)
-            f_xx, f_ux, f_uu = None,None,None  # Not implemented.
+            f_xx, f_ux, f_uu = None, None, None  # Not implemented.
             return fx, J[:, :self.state_size], J[:, self.state_size:], f_xx, f_ux, f_uu
         else:
             return fx 
