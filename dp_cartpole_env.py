@@ -7,7 +7,7 @@ import numpy as np
 from dp_symbolic_env import symv
 from gym.envs.classic_control import rendering
 from dp_symbolic_env import DPSymbolicEnvironment
-
+from scipy.interpolate import interp1d
 
 
 def dim1(x):
@@ -148,24 +148,28 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         return euler_expand
 
-    def step(self, x0, u_fun, N_steps, method = None):
+    def step(self, x0, us, N_steps = 1, u_prev = 0, method = None):
         """
         Computes the next state of system using RK4 integration
-        :param x: Current State
-        :param u: Force
-        :param dt: Time step
+        :param x0: Current State
+        :param us: Planned trajectory
+        :param N_steps: number of steps to take
+        :param u_prev: previous action
         :return: Next State
         """
+        us = np.append(u_prev, us)
+        time = np.array([self.dt * n for n in range(len(us))])
+        u_fun = interp1d(time, us)
 
-        xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps+1, method = method)
+        xs = self.Runge_Kutta4(x0, u_fun, 0, N_steps * self.dt, N_steps+1, method = method)
         xs = np.array([self.x_cont2x_discrete(x, "numpy") for x in xs])
         return xs[1:]
 
 
-    def Runge_Kutta4(self, x0, u_fun, t0, tF, method=None):
+    def Runge_Kutta4(self, x0, u_fun, t0, tF, N_steps, method=None):
         if len(x0) == 5:
             x0 = self.x_discrete2x_cont(x0, 'numpy')
-        N_steps = int(tF - t0)
+
         time = np.linspace(t0, tF, N_steps)
         """ Making System Dynamics time dependent given an interpolation function of the trajectory of discrete actions """
         u = symv("u", self.action_size)
@@ -179,7 +183,8 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         for n in range(N_steps-1):
 
-            h = self.dt
+
+            h = time[n+1] - time[n]
             t_current = time[n]
             x_current = xs[n]
 
