@@ -93,7 +93,7 @@ def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6,verbose=Tru
             """
             Step 2: Backward pass to obtain control law (l, L). Same as before so more copy-paste
             """
-            L,l = backward_pass(f_x, f_u, L_x, L_u, L_xx, L_ux, L_uu)
+            L,l = backward_pass(f_x, f_u, L_x, L_u, L_xx, L_ux, L_uu, mu)
             #raise NotImplementedError("Obtain l, L = ... in backward pass")
             """
             Step 3: Forward pass and alpha scheduling.

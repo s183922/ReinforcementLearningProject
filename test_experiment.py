@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 from dp_cartpole_env import CartpoleSinCosEnvironment as d_env
+
 dt = 0.05
 max_force = 5
 env = d_env(dt, min_bounds = - max_force, max_bounds = max_force)

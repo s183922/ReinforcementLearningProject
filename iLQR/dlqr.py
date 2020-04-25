@@ -63,10 +63,10 @@ def LQR(A, B, d=None, Q=None, R=None, H=None, q=None, r=None, qc=None, QN=None, 
         # >>> x = A^{-1} y this
         # in a numerically stable manner this should be done as
         # >>> x = np.linalg.solve(A, y)
-        # TODO: 6 lines missing.
+
         S_uk  = r[k] + B[k].T @ v[k+1] + B[k].T @ V[k+1] @ d[k]
-        S_uu  = R[k] + B[k].T @ V[k+1] @ B[k]
-        S_ux  = H[k] + B[k].T @ V[k+1] @ A[k]
+        S_uu  = R[k] + B[k].T @ (V[k+1] + mu *In) @ B[k]
+        S_ux  = H[k] + B[k].T @ (V[k+1] + mu *In) @ A[k]
         L[k]  = np.linalg.solve(-S_uu, S_ux)
         l[k]  = np.linalg.solve(-S_uu, S_uk)
 
