@@ -81,7 +81,7 @@ def LQR(A, B, f_xx, f_ux, f_uu, d=None, Q=None, R=None, H=None, q=None, r=None, 
         vc[k] = vc[k+1] + qc[k] + d[k].T @ v[k+1] + 1/2 * d[k].T @ V[k+1] @ d[k] + 1/2 * l[k].T @ S_uk # Tassa12: ??     /   Har20: v (74)
         """
 
-        """ Tassa12 5, 10, 11 """
+        """ Tassa12 5, 10, 11    -   A = f_x, B = f_u """
         Q_[k]  = qc[k] + vc[k+1]
         Qx[k]  = q[k] + A[k].T @ v[k+1]
         Qu[k]  = r[k] + B[k].T @ v[k+1]
