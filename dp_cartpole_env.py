@@ -29,6 +29,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
                  mp=0.1,
                  l=1.0,
                  g=9.80665,
+                 ddp = False,
                  **kwargs):
         """Cartpole dynamics.
 
@@ -59,7 +60,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         self.g_val = g
         self.mc_val = mc
 
-        super(CartpoleSinCosEnvironment, self).__init__(dt=dt, cost=cost)
+        super(CartpoleSinCosEnvironment, self).__init__(dt=dt, cost=cost, ddp = ddp)
 
     def render(self, x=None):
         # the render function we use assumes parameterization in terms of these.
@@ -157,7 +158,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         :param u_prev: previous action
         :return: Next State
         """
-        us = np.append(u_prev, us)
+        us = us.reshape(-1)
         time = np.array([self.dt * n for n in range(len(us))])
         u_fun = interp1d(time, us)
 
@@ -182,7 +183,6 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         us = [u_fun(t0).reshape(-1)]
 
         for n in range(N_steps-1):
-
 
             h = time[n+1] - time[n]
             t_current = time[n]

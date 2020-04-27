@@ -57,7 +57,7 @@ def ilqr_basic(env, N, x0, us_init=None, n_iterations=500,verbose=True):
         J_hist.append(J)
     return x_bar, u_bar, J_hist
 
-def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6,verbose=True):
+def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6, ddp = False, verbose=True):
     """
     For linesearch implement method described in (TET12) (we will use regular iLQR, not DDP!)
     """
@@ -86,14 +86,14 @@ def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6,verbose=Tru
         """ Step 1: Compute derivatives around trajectory and cost estimate of trajectory.
         (copy-paste from basic implementation). In our implementation, J_bar = J_{u^star}(x_0) """
         # TODO: 2 lines missing.
-        (f_x, f_u), (L, L_x, L_u, L_xx, L_ux, L_uu) = get_derivatives(env, x_bar, u_bar)
+        (f_x, f_u, f_xx, f_ux, f_uu), (L, L_x, L_u, L_xx, L_ux, L_uu) = get_derivatives(env, x_bar, u_bar, ddp)
         J_bar = compute_J(env, x_bar, u_bar)
         #raise NotImplementedError("Obtain derivatives f_x, f_u, ... as well as cost of trajectory J_bar = ...")
         try:
             """
             Step 2: Backward pass to obtain control law (l, L). Same as before so more copy-paste
             """
-            L,l = backward_pass(f_x, f_u, L_x, L_u, L_xx, L_ux, L_uu, mu)
+            L,l = backward_pass(f_x, f_u, f_xx, f_ux, f_uu, L, L_x, L_u, L_xx, L_ux, L_uu, mu)
             #raise NotImplementedError("Obtain l, L = ... in backward pass")
             """
             Step 3: Forward pass and alpha scheduling.
@@ -136,8 +136,8 @@ def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6,verbose=Tru
             mu = max(mu_min, mu * Delta)
             #raise NotImplementedError("Delta, mu = ...")
 
-            if mu_max and mu >= mu_max:
-                raise Exception("Exceeded max regularization term; we are stuffed.")
+        #   if mu_max and mu >= mu_max:
+        #        raise Exception("Exceeded max regularization term; we are stuffed.")
 
         dJ = 0 if i == 0 else J_bar-J_hist[-1]
         info = "converged" if converged else ("accepted" if alpha_was_accepted else "failed")
@@ -150,7 +150,7 @@ def ilqr_linesearch(env, N, x0, n_iterations, us_init=None, tol=1e-6,verbose=Tru
 
 
 
-def backward_pass(f_x, f_u, L_x, L_u, L_xx, L_ux, L_uu, _mu=1):
+def backward_pass(f_x, f_u, f_xx, f_ux, f_uu, L, L_x, L_u, L_xx, L_ux, L_uu, _mu=1):
     """
     Get L,l feedback law given linearization around nominal trajectory (the 'Q'-terms in (Har20, Alg 1)).
     To do so, simply call LQR with appropriate inputs.
@@ -163,7 +163,7 @@ def backward_pass(f_x, f_u, L_x, L_u, L_xx, L_ux, L_uu, _mu=1):
     q, r = L_x[:-1], L_u
 
     #raise NotImplementedError("")
-    (L, l), (V, v, vc) = LQR(A=A, B=B, R=R, Q=Q, QN=QN, H=H, q=q, qN=qN, r=r, mu=_mu)
+    (L, l), (V, v, vc) = LQR(A=A, B=B, f_xx = f_xx, f_ux = f_ux, f_uu = f_uu, R=R, Q=Q, QN=QN, H=H, q=q, qc= L, qN=qN, r=r, mu=_mu)
     return L,l
 
 def compute_J(env, xs, us):
@@ -181,7 +181,7 @@ def compute_J(env, xs, us):
     JN = env.gN(xs[-1])
     return sum(map(lambda args: env.g(*args), zip(xs[:-1], us, range(N)))) + JN
 
-def get_derivatives(env, x_bar, u_bar):
+def get_derivatives(env, x_bar, u_bar, ddp = False):
     """
     Compute derivatives for system dynamics around the given trajectory. should be handled using
     env.f and env.g+env.gN.
@@ -209,10 +209,10 @@ def get_derivatives(env, x_bar, u_bar):
     recall env.g has output:
         L[i], L_x[i], L_u[i], L_xx[i], L_ux[i], L_uu[i] = env.g(x, u, i, terminal=False, compute_gradients=True)
     """
-    f_x, f_u = [None] * (N), [None] * N
+    f_x, f_u, f_xx, f_ux, f_uu = [None] * (N), [None] * N, [None] * (N), [None] * N, [None] * (N)
     L, L_x, L_u, L_xx, L_ux, L_uu = [None] * (N+1), [None] * (N+1), [None] * (N), [None] * (N+1), [None] * (N), [None] * (N)
     for i in range(N):
-        x, f_x[i], f_u[i], _, _, _ = env.f(x_bar[i], u_bar[i], i, compute_jacobian=True)
+        x, f_x[i], f_u[i], f_xx[i], f_ux[i], f_uu[i] = env.f(x_bar[i], u_bar[i], i, compute_jacobian=True, compute_Hessian = ddp)
         L[i], L_x[i], L_u[i], L_xx[i], L_ux[i], L_uu[i] = env.g(x_bar[i], u_bar[i], i, terminal=False, compute_gradients=True)
     # TODO: 2 lines missing.
     #raise NotImplementedError("")
@@ -221,7 +221,7 @@ def get_derivatives(env, x_bar, u_bar):
     L[N] = LN
     L_x[N] = L_xN
     L_xx[N] = L_xxN
-    return (f_x, f_u), (L, L_x, L_u, L_xx, L_ux, L_uu)
+    return (f_x, f_u, f_xx, f_ux, f_uu), (L, L_x, L_u, L_xx, L_ux, L_uu)
 
 def forward_pass(env, x_bar, u_bar, L, l, alpha=1.0):
     """Applies the controls for a given trajectory.

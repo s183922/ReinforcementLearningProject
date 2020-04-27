@@ -22,7 +22,7 @@ def fz(X, a, b=None, N=None):
     X = np.zeros((a,) if b is None else (a,b))
     return [X] * N
 
-def LQR(A, B, d=None, Q=None, R=None, H=None, q=None, r=None, qc=None, QN=None, qN=None, qcN=None, mu=0):
+def LQR(A, B, f_xx, f_ux, f_uu, d=None, Q=None, R=None, H=None, q=None, r=None, qc=None, QN=None, qN=None, qcN=None, mu=0):
     """
     Implement LQR. See (Har20, Section 2.3.1, eq.(60)-(62)) for the specific definitino of the above terms
     or the lecture slides. Note there is a typo.
@@ -46,16 +46,19 @@ def LQR(A, B, d=None, Q=None, R=None, H=None, q=None, r=None, qc=None, QN=None, 
     QN = np.zeros((n,n)) if QN is None else QN
     qN = np.zeros((n,)) if qN is None else qN
     qcN = 0 if qcN is None else qcN
-    H,q,qc,r = fz(H,m,n,N=N), fz(q,n,N=N), fz(qc,1,N=N), fz(r,m,N=N)
+    H, q, qc, r = fz(H, m, n, N=N), fz(q, n, N=N), fz(qc, 1, N=N), fz(r, m, N=N)
     d = fz(d,n, N=N)
 
     V[N] = QN
     v[N] = qN
     vc[N] = qcN
     # raise NotImplementedError("Initialize V[N], v[N], vc[N] here")
-    
     In = np.eye(n)
-    
+
+
+    """ Test """
+    Q_, Qx, Qu, Qxx, Quu, Qux = [None] * N, [None] * N, [None] * N, [None] * N, [None] * N, [None] * N,
+
     for k in range(N-1,-1,-1):
         # When you update S_uu and S_ux, check out (TET12, Eq (10a) and Eq (10b))
         # and remember to add regularization as the terms ... (V[k+1] + mu * In) ...
@@ -63,20 +66,45 @@ def LQR(A, B, d=None, Q=None, R=None, H=None, q=None, r=None, qc=None, QN=None, 
         # >>> x = A^{-1} y this
         # in a numerically stable manner this should be done as
         # >>> x = np.linalg.solve(A, y)
+        """ Orignal """
+        """
+        S_uk  = r[k] + B[k].T @ v[k+1] + B[k].T @ V[k+1] @ d[k] # Tassa12: Q_u  (5b ?)      /   Har20: S_uk (67)
+        S_uu  = R[k] + B[k].T @ (V[k+1] + mu *In) @ B[k]        # Tassa12: Q_uu (10a)       /   Har20: S_uu (68)
+        S_ux  = H[k] + B[k].T @ (V[k+1] + mu *In) @ A[k]        # Tassa12: Q_ux (10b)       /   Har20: S_ux (69)
+        L[k]  = np.linalg.solve(-S_uu, S_ux)                    # Tassa12: k    (10d)       /   Har20: L    (70)
+        l[k]  = np.linalg.solve(-S_uu, S_uk)                    # Tassa12: K    (10c)       /   Har20: l    (71)
 
-        S_uk  = r[k] + B[k].T @ v[k+1] + B[k].T @ V[k+1] @ d[k]
-        S_uu  = R[k] + B[k].T @ (V[k+1] + mu *In) @ B[k]
-        S_ux  = H[k] + B[k].T @ (V[k+1] + mu *In) @ A[k]
-        L[k]  = np.linalg.solve(-S_uu, S_ux)
-        l[k]  = np.linalg.solve(-S_uu, S_uk)
-
-        V[k]  = Q[k] + A[k].T @ V[k+1]  @ A[k] - L[k].T @ S_uu @ L[k]
+        V[k]  = Q[k] + A[k].T @ V[k+1]  @ A[k] - L[k].T @ S_uu @ L[k]  # Tassa12: ??        /   Har20: V    (72)
         V[k]  = 0.5 * (V[k] + V[k].T)  # I recommend putting this here to keep V positive semidefinite
 
-        v[k]  = q[k] + A[k].T @ (v[k+1] + V[k+1]@d[k]) + S_ux.T @ l[k]
-        vc[k] = vc[k+1] + qc[k] + d[k].T @ v[k+1] + 1/2 * d[k].T @ V[k+1] @ d[k] + 1/2 * l[k].T @ S_uk
+        v[k]  = q[k] + A[k].T @ (v[k+1] + V[k+1]@d[k]) + S_ux.T @ l[k] # Tassa12: ??        /   Har20: v    (73)
+        vc[k] = vc[k+1] + qc[k] + d[k].T @ v[k+1] + 1/2 * d[k].T @ V[k+1] @ d[k] + 1/2 * l[k].T @ S_uk # Tassa12: ??     /   Har20: v (74)
+        """
 
-    return (L,l), (V,v,vc)
+        """ Tassa12 5, 10, 11 """
+        Q_[k]  = qc[k] + vc[k+1]
+        Qx[k]  = q[k] + A[k].T @ v[k+1]
+        Qu[k]  = r[k] + B[k].T @ v[k+1]
+        Qxx[k] = Q[k] + A[k].T @ V[k+1] @ A[k]
+        #Qxx[k] = Q[k] + A[k].T @ V[k + 1] @ A[k] + np.tensordot(v[k + 1], f_xx[k], 1)
+        Quu[k] = R[k] + B[k].T @ (V[k+1] + mu * In) @ B[k]
+        #Quu[k] = R[k] + B[k].T @ (V[k + 1] + mu * In) @ B[k] + np.tensordot(v[k + 1], f_uu[k], 1)
+        Qux[k] = H[k] + B[k].T @ (V[k+1] + mu * In) @ A[k]
+        #Qux[k] = H[k] + B[k].T @ (V[k + 1] + mu * In) @ A[k] + np.tensordot(v[k + 1], f_ux[k], 1)
+        if f_uu[k] is not None and f_ux[k] is not None and f_xx[k] is not None:
+            Qxx[k] += np.tensordot(v[k + 1], f_xx[k], 1)
+            Quu[k] += np.tensordot(v[k + 1], f_uu[k], 1)
+            Qux[k] += np.tensordot(v[k + 1], f_ux[k], 1)
+        l[k]   = np.linalg.solve(-Quu[k], Qu[k])
+        L[k]   = np.linalg.solve(-Quu[k], Qux[k])
+
+        vc[k]  = Q_[k]  + 1/2 * l[k].T @ Quu[k] @ l[k] + l[k].T @ Qu[k]
+        v[k]   = Qx[k]  + L[k].T @ Quu[k] @ l[k] + L[k].T @ Qu[k] + Qux[k].T @ l[k]
+        V[k]   = Qxx[k] + L[k].T @ Quu[k] @ L[k] + L[k].T @ Qux[k] + Qux[k].T @ L[k]
+        V[k]   = 0.5 * (V[k] + V[k].T)
+
+
+    return (L, l), (V, v, vc)
 
 
 def dlqr_J(x,V,v,vc, QN=None, qN=None, qcN=None):

@@ -9,11 +9,11 @@ import time
 from utils.irlc import savepdf
 from iLQR.ilqr import ilqr_basic, ilqr_linesearch
 
-def ilqr(env, N, x0, n_iter, use_linesearch, verbose=True):
+def ilqr(env, N, x0, n_iter, use_linesearch, verbose=True, ddp = False):
     if not use_linesearch:
-        xs, us, J_hist = ilqr_basic(env, N, x0, n_iterations=n_iter,verbose=verbose) 
+        xs, us, J_hist = ilqr_basic(env, N, x0, n_iterations=n_iter,verbose=verbose,)
     else:
-        xs, us, J_hist = ilqr_linesearch(env, N, x0, n_iterations=n_iter, tol=1e-6,verbose=verbose)
+        xs, us, J_hist = ilqr_linesearch(env, N, x0, n_iterations=n_iter, tol=1e-6,verbose=verbose, ddp = ddp)
     xs, us = np.stack(xs), np.stack(us)
     return xs, us, J_hist
 

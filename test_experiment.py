@@ -16,7 +16,7 @@ true_ilqr = pickle.load(open("Trajectories/xs_ilqr_H200_S2_N200.pkl", "rb"))
 model_ilqr = pickle.load(open("Trajectories/xs_predicted_ilqr_H200_S2_N200.pkl", "rb"))
 ilqr_actions = pickle.load(open("Trajectories/us_ilqr_H200_S2_N200.pkl", "rb"))
 
-
+print(len(true_mpc))
 for x in true_mpc:
     env.render(x)
     time.sleep(0.06)
