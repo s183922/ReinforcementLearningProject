@@ -66,11 +66,35 @@ class DPSymbolicEnvironment:
             f_xx, f_ux, f_uu = None, None, None
             if compute_Hessian:
                 H = self.f_zz(x, u)
-                f_uu, f_ux = H[self.state_size:H.shape[0]:self.state_size+1, self.state_size], H[5:H.shape[0]:6, :self.state_size]
+                """ H:
+                 0  [f1_x1x1, f1_x1x2, f1_x1x3, f1_x1x4, f1_x1x5, f1_x1u]
+                 1  [f1_x2x1, f1_x2x2, f1_x2x3, f1_x2x4, f1_x2x5, f1_x2u]
+                 2  [f1_x3x1, f1_x3x2, f1_x3x3, f1_x3x4, f1_x3x5, f1_x3u]
+                    .               .           .           .           .
+                    .               .           .           .           .
+                 5  [f1_ux1,  f1_ux2,  f1_ux3,  f1_ux4,  f1_ux5,   f1_uu]
+                 6  [f2_x1x1, f2_x1x2, f2_x1x3, f2_x1x4, f2_x1x5, f2_x1u]
+                  .               .           .           .           .
+                  .               .           .           .           .
+                 30 [f5_ux1,  f5_ux2,  f5_ux3,  f5_ux4,  f5_ux5,   f5_uu]
+                
+                    f_uu : Every sixth element in the last column 
+                    f_ux: Every sixth row minus the last column
+                    f_xx: everything else                
+                """
+                f_uu = H[self.state_size:H.shape[0]:self.state_size+1, self.state_size]
+                f_ux = H[5:H.shape[0]:6, :self.state_size]
+
                 f_xx_idx = np.ones(H.shape[0], dtype=np.bool)
                 f_xx_idx[self.state_size:H.shape[0]:self.state_size+1] = 0
                 f_xx = H[f_xx_idx, :self.state_size].reshape(self.state_size, self.state_size, self.state_size)
-
+                """ 
+                    f_uu should take the form (1x5): [f1_uu, f2_uu, f3_uu, f4_uu, f5_uu]
+                    f_ux should take the form (5x5): [[f1_x1u, f1_x2u, f1_x3u, f1_x4u, f1_x5_u], [f2_x1u, f2_x2u, f2_x3u, f2_x4u, f2_x5_u], ...,
+                                                     [f5_x1u, f5_x2u, f5_x3u, f5_x4u, f5_x5_u]]
+                    f_xx should take the form (5x5x5): [[[f1_x1x1, f1_x2x1, f1_x3x1, f1_x4x1, f1_x5x1], ... [f1_x1x5, f1_x2x5, f1_x3x5, f1_x4x5, f1_x5x5]] ,
+                                                         [f2_x1x1, f2_x2x1, f2_x3x1, f2_x4x1, f2_x5x1], ... [f2_x1x5, f2_x2x5, f2_x3x5, f2_x4x5, f2_x5x5]] 
+                """
 
             return fx, J[:, :self.state_size], J[:, self.state_size:], f_xx, f_ux, f_uu
         else:
