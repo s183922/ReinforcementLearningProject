@@ -149,7 +149,7 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
 
         return euler_expand
 
-    def step(self, x0, us, N_steps = 1, u_prev = 0, method = None):
+    def step(self, x0, us, N_steps = 1,  method = None):
         """
         Computes the next state of system using RK4 integration
         :param x0: Current State
