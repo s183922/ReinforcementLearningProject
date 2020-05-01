@@ -23,7 +23,8 @@ class DPSymbolicEnvironment:
         x = symv('x', self.state_size)
 
 
-        """ y is a symbolic variable representing the system dynamics y = f(xs, us, dt)
+        """ 
+            y is a symbolic variable representing the system dynamics y = f(xs, us, dt)
             It's equal to x_{k+1} = [ x_{k+1}, x'_{k+1}, sin(theta_{k+1}), cos(theta_{k+1}, theta'_{k+1} ]
             Each element in x_{k+1} is a function of the state and action f(x1, x2, x3, x4, x5, u)
         """
@@ -42,7 +43,6 @@ class DPSymbolicEnvironment:
         self.f_discrete = sym.lambdify((tuple(x), tuple(u)), y, 'numpy')
 
         if ddp:
-
             """ Compute the Hessian - the double derivatives 
                 Each element in dy_dz is differentiated with respect to each parameter x1, x2, x3, x4, x5, u.
                 Resulting in a 30 x 6 matrix. Each row represent the derivatives of en element in dy_dz 

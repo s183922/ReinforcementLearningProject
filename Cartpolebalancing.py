@@ -42,10 +42,8 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
             xs, us, J_hist = ilqr(env, time_horizon_length, x_current, n_iter = 300, use_linesearch = True, verbose = False, ddp = ddp)
             u[i] = np.copy(us[0])
 
-            #raise NotImplementedError("Call ilqr and obtain u[i] as the first part of the optimised ac
-            # tion-sequence")
         elif i == 0:
-            xs, us, J_hist = ilqr(env, N, x_current, n_iter=300, use_linesearch=True)
+            xs, us, J_hist = ilqr(env, N, x_current, n_iter=300, use_linesearch=True, verbose = True, ddp = ddp)
             u[i] = np.copy(us[i])
         else:
             u[i] = np.copy(us[i])
@@ -76,17 +74,17 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
     #env.viewer.close()
     import os, sys; os.chdir(sys.path[0])
 
-    ss = "ddp"
-    N1 = time_horizon_length if RecedingHorizon else N
-    pickle.dump(x, open(f"Trajectories/xs_{ss}_H{N1}_S{sigma}_N{N}.pkl", "wb"))
-    pickle.dump(u, open(f"Trajectories/us_{ss}_H{N1}_S{sigma}_N{N}.pkl", "wb"))
-    pickle.dump(x_model, open(f"Trajectories/xs_predicted_{ss}_H{N1}_S{sigma}_N{N}.pkl", "wb"))
+    ss = "ddp" if ddp else "ilqr"
+    ss1 = "mp" if RecedingHorizon else "no_mpc"
+
+    pickle.dump(x, open(f"Trajectories/xs_{ss}_{ss1}.pkl", "wb"))
+    pickle.dump(u, open(f"Trajectories/us_{ss}_{ss1}.pkl", "wb"))
+    pickle.dump(x_model, open(f"Trajectories/xs_predicted_{ss}_{ss1}.pkl", "wb"))
     plt.plot(np.squeeze(x)[:, 4])
     plt.plot(np.squeeze(u))
     plt.legend(["Angle", "Action"],)
-    # out = f""
-    ss = "mpc" if RecedingHorizon else "no_mpc"
-    plt.title(ss)
+
+    plt.title(ss + " " + ss1)
     from irlc import savepdf
     savepdf(f"cartpole_{ss}")
     plt.show()
@@ -95,9 +93,10 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
 if __name__ == "__main__":
     sigma = 2
     time_horizon_length = 30  # Control Horizon
-    ddp = True
-    # Test without receding horizon. This should fail for positive sigma.
-    #cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length)
 
+    # Test without receding horizon. This should fail for positive sigma.
+    cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
+    cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
     # Test with receding horizon. This should succeed even for positive sigma.
-    cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = ddp)
+    cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
+    cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
