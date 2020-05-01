@@ -20,13 +20,14 @@ from dp_cartpole_env import CartpoleSinCosEnvironment as d_env
 true_mpc = pickle.load(open("Trajectories/xs_mpc_H30_S2_N200.pkl", "rb"))
 model_mpc = pickle.load(open("Trajectories/xx_mpc_H30_S2_N200.pkl", "rb"))
 mpc_actions = pickle.load(open("Trajectories/us_mpc_H30_S2_N200.pkl", "rb"))
-mpc_cost = pickle.load(open("Trajectories/JJ_mpc_H30_S2_N200.pkl", "rb"))
+#mpc_cost = pickle.load(open("Trajectories/JJ_mpc_H30_S2_N200.pkl", "rb"))
 
 true_ilqr = pickle.load(open("Trajectories/xs_ilqr_H200_S2_N200.pkl", "rb"))
 model_ilqr = pickle.load(open("Trajectories/xs_predicted_ilqr_H200_S2_N200.pkl", "rb"))
 ilqr_actions = pickle.load(open("Trajectories/us_ilqr_H200_S2_N200.pkl", "rb"))
-ilqr_cost = pickle.load(open("Trajectories/JJ_ilqr_H200_S2_N200.pkl", "rb"))
+#ilqr_cost = pickle.load(open("Trajectories/JJ_ilqr_H200_S2_N200.pkl", "rb"))
 
+for i in range(201)
 c, c_x, c_u, c_xx, c_ux, c_uu = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
 
 sin_ilqr_p, cos_ilqr_p = get_angle(model_ilqr)
