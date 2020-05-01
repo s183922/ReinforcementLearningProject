@@ -7,8 +7,8 @@ References:
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from irlc import bmatrix
-from irlc import savepdf
+from utils.irlc import bmatrix
+from utils.irlc import savepdf
 
 
 def fz(X, a, b=None, N=None):
