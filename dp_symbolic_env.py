@@ -82,7 +82,7 @@ class DPSymbolicEnvironment:
                     f_ux: Every sixth row minus the last column
                     f_xx: everything else                
                 """
-                f_uu = H[self.state_size:H.shape[0]:self.state_size+1, self.state_size]
+                f_uu = H[self.state_size:H.shape[0]:self.state_size+1, self.state_size:]
                 f_ux = H[5:H.shape[0]:6, :self.state_size]
 
                 f_xx_idx = np.ones(H.shape[0], dtype=np.bool)

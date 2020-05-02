@@ -3,7 +3,8 @@ from iLQR.cost import QRCost
 from iLQR.ilqr import *
 from get_values import get_angle, get_diff, plot_angle, plot_tan2, get_x
 from dp_cartpole_env import CartpoleSinCosEnvironment as d_env
-
+import  numpy as np
+import matplotlib.pyplot as plt
 dt = 0.05
 max_force = 5
 pole_length = 1.0
@@ -15,35 +16,36 @@ x0 = np.array([0, 0, np.sin(init_angle), np.cos(init_angle), 0])
 Q = np.diag([1, 0.01, 30, 30, 0.01])  # diag([1.0, 1.0, 1.0, 1.0, 1.0])
 R = 0.01 * np.eye(action_size)
 cost = QRCost(Q, R, QN=None, x_goal=x_goal)
-#env = d_env(dt, cost = cost,l=pole_length, min_bounds = - max_force, max_bounds = max_force)
-ss = pickle.load(open("Trajectories/xs_ilqr_no_mpc.pkl.pkl", "rb"))
+env = d_env(dt, cost = cost,l=pole_length, min_bounds = - max_force, max_bounds = max_force)
+ss = pickle.load(open("Trajectories/xs_ilqr_no_mpc300.pkl", "rb"))
 
 s= 1
-true_ilqr = get_x(pickle.load(open("Trajectories/xs_ilqr_no_mpc.pkl.pkl", "rb")))
-model_ilqr = get_x(pickle.load(open("Trajectories/xs_predicted_ilqr_no_mpc.pkl", "rb")))
-ilqr_actions = pickle.load(open("Trajectories/us_ilqr_no_mpc.pkl", "rb"))
+true_ilqr = np.asarray(pickle.load(open("Trajectories/xs_ilqr_no_mpc300.pkl", "rb")))
+model_ilqr = np.asarray(pickle.load(open("Trajectories/xs_predicted_ilqr_no_mpc300.pkl", "rb")))
+ilqr_actions = np.asarray(pickle.load(open("Trajectories/us_ilqr_no_mpc300.pkl", "rb")))
 
-true_mpc = get_x(pickle.load(open("Trajectories/xs_ilqr_mp.pkl", "rb")))
-model_mpc = get_x(pickle.load(open("Trajectories/xs_predicted_ilqr_mp.pkl", "rb")))
-mpc_actions = pickle.load(open("Trajectories/us_ilqr_mp.pkl", "rb"))
+true_mpc = np.asarray(pickle.load(open("Trajectories/xs_ilqr_mpc300.pkl", "rb")))
+model_mpc = np.asarray(pickle.load(open("Trajectories/xs_predicted_ilqr_mpc300.pkl", "rb")))
+mpc_actions = np.asarray(pickle.load(open("Trajectories/us_ilqr_mpc300.pkl", "rb")))
 
-true_ddp_ilqr = get_x(pickle.load(open("Trajectories/xs_ddp_no_mpc.pkl", "rb")))
-model_ddp_ilqr = get_x(pickle.load(open("Trajectories/xs_predicted_ddp_no_mpc.pkl", "rb")))
-ddp_ilqr_actions = pickle.load(open("Trajectories/us_ddp_no_mpc.pkl", "rb"))
+true_ddp_ilqr = np.asarray(pickle.load(open("Trajectories/xs_ddp_no_mpc300.pkl", "rb")))
+model_ddp_ilqr = np.asarray(pickle.load(open("Trajectories/xs_predicted_ddp_no_mpc300.pkl", "rb")))
+ddp_ilqr_actions = np.asarray(pickle.load(open("Trajectories/us_ddp_no_mpc300.pkl", "rb")))
 
-true_ddp_mpc = get_x(pickle.load(open("Trajectories/xs_ddp_mp.pkl", "rb")))
-model_ddp_mpc = get_x(pickle.load(open("Trajectories/xs_predicted_ddp_mp.pkl", "rb")))
-ddp_mpc_actions = pickle.load(open("Trajectories/us_ddp_mp.pkl", "rb"))
+true_ddp_mpc = np.asarray(pickle.load(open("Trajectories/xs_ddp_mpc300.pkl", "rb")))
+model_ddp_mpc = np.asarray(pickle.load(open("Trajectories/xs_predicted_ddp_mpc300.pkl", "rb")))
+ddp_mpc_actions = np.asarray(pickle.load(open("Trajectories/us_ddp_mpc300.pkl", "rb")))
 
-c1 = np.zeros((200,1))
-c2 = np.zeros((200,1))
-c3 = np.zeros((200,1))
-c4 = np.zeros((200, 1))
-for i in range(200):
-    c1[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c2[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c3[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c4[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
+c1 = np.zeros((300,1))
+c2 = np.zeros((300,1))
+c3 = np.zeros((300,1))
+c4 = np.zeros((300, 1))
+for i in range(300):
+    c1[i], _, _, _, _, _ = QRCost.g(self=cost, x=true_mpc[:,0][i], u=mpc_actions[i], i=None, terminal=False)
+    c2[i], _, _, _, _, _ = QRCost.g(self=cost, x=true_ilqr[:,0][i], u=ilqr_actions[i], i=None, terminal=False)
+    c3[i], _, _, _, _, _ = QRCost.g(self=cost, x=true_ddp_mpc[:,0][i], u=ddp_mpc_actions[i], i=None, terminal=False)
+    c4[i], _, _, _, _, _ = QRCost.g(self=cost, x=true_ddp_ilqr[:,0][i], u=ddp_ilqr_actions[i], i=None, terminal=False)
+
 
 sin_ilqr_p, cos_ilqr_p = get_angle(model_ilqr)
 sin_ilqr_t, cos_ilqr_t = get_angle(true_ilqr)
@@ -55,16 +57,16 @@ sin_mpc_d, cos_mpc_d = get_diff(model_mpc,true_mpc)
 x_ilqr_t = get_x(true_ilqr)
 x_mpc_t = get_x(true_mpc)
 
-J = np.zeros((201,1))
-J1 = np.zeros((201,1))
-for i in range(201):
+J = np.zeros((300,1))
+J1 = np.zeros((300,1))
+for i in range(300):
     J[i] = compute_J(env, x_ilqr_t[i], ilqr_actions[i])
     J1[i] = compute_J(env, x_mpc_t[i], mpc_actions[i])
-N = 200
+N = 300
 L1, L_x1, L_u1, L_xx1, L_ux1, L_uu1 = [None] * (N + 1), [None] * (N + 1), [None] * (N), [None] * (N + 1), [None] * (N), [None] * (N)
 L2, L_x2, L_u2, L_xx2, L_ux2, L_uu2 = [None] * (N + 1), [None] * (N + 1), [None] * (N), [None] * (N + 1), [None] * (N), [None] * (N)
 
-for i in range(200):
+for i in range(300):
     L1[i], L_x1[i], L_u1[i], L_xx1[i], L_ux1[i], L_uu1[i] = env.g(x_ilqr_t[i], ilqr_actions[i], i, terminal=False,compute_gradients=True)
     L2[i], L_x2[i], L_u2[i], L_xx2[i], L_ux2[i], L_uu2[i] = env.g(x_mpc_t[i], mpc_actions[i], i, terminal=False,compute_gradients=True)
 
@@ -74,7 +76,7 @@ plt.ylabel("J")
 plt.title("Cost pr iteration")
 plt.show()
 
-plt.plot(ilqr_cost)
+plt.plot(c2)
 plt.xlabel("Time steps")
 plt.ylabel("J")
 plt.title("Cost pr iteration")

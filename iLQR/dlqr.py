@@ -93,9 +93,9 @@ def LQR(A, B, f_xx, f_ux, f_uu, d=None, Q=None, R=None, H=None, q=None, r=None, 
         Qux[k] = H[k] + B[k].T @ (V[k+1] + mu * In) @ A[k]
         #Qux[k] = H[k] + B[k].T @ (V[k + 1] + mu * In) @ A[k] + np.tensordot(v[k + 1], f_ux[k], 1)
         if f_uu[k] is not None and f_ux[k] is not None and f_xx[k] is not None:
-            Qxx[k] += np.tensordot(v[k + 1], f_xx[k], 1)
-            Quu[k] += np.tensordot(v[k + 1], f_uu[k], 1)
-            Qux[k] += np.tensordot(v[k + 1], f_ux[k], 1)
+            Qxx[k] += np.asarray([v[k + 1][i] * x for i, x in enumerate(f_xx[k])]).sum(2)
+            Quu[k] += np.asarray([v[k + 1][i] * x for i, x in enumerate(f_uu[k])]).sum(0)
+            Qux[k] += np.asarray([v[k + 1][i] * x for i, x in enumerate(f_ux[k])]).sum(1)
         l[k]   = np.linalg.solve(-Quu[k], Qu[k])
         L[k]   = np.linalg.solve(-Quu[k], Qux[k])
 
