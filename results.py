@@ -25,6 +25,7 @@ sin_ilqr_p, cos_ilqr_p = get_angle(model_ilqr)
 sin_ilqr_t, cos_ilqr_t = get_angle(true_ilqr)
 sin_mpc_p, cos_mpc_p = get_angle(model_mpc)
 sin_mpc_t, cos_mpc_t = get_angle(true_mpc)
+
 sin_ddp_p, cos_ddp_p = get_angle(model_ddp_ilqr)
 sin_ddp_t, cos_ddp_t = get_angle(true_ddp_ilqr)
 sin_ddp1_p, cos_ddp1_p = get_angle(model_ddp_mpc)
@@ -46,6 +47,4 @@ plot_cost(c_11,c_22,c_33,c_44,title="Predicted accumulated cost",fig="accumulate
 plot_tan2(sin_ilqr_p,cos_ilqr_p,sin_ilqr_t,cos_ilqr_t,title="iLQR trajectory theta",fig_nr=5,fig="ilqr_theta")
 plot_tan2(sin_mpc_p,cos_mpc_p,sin_mpc_t,cos_mpc_t,title="iLQR MPC trajectory theta",fig_nr=6,fig="mpc_theta")
 plot_tan2(sin_ddp_p,cos_ddp_p,sin_ddp_t,cos_ddp_t,title="DDP trajectory theta",fig_nr=7,fig="ddp_theta")
-plot_tan2(sin_ddp1_p,cos_ddp1_p,sin_ddp1_t,cos_ddp1_t,title="DDP MPC trajectory theta",fig_nr=8,fig="ddp1_theta"
-
-
+plot_tan2(sin_ddp1_p,cos_ddp1_p,sin_ddp1_t,cos_ddp1_t,title="DDP MPC trajectory theta",fig_nr=8,fig="ddp1_theta")

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def get_x(model):
     k = 0
-    x = np.zeros((201, 1))
+    x = np.zeros((301, 1))
     for i in model:
         x[k] = i[0]
         k += 1
@@ -20,8 +20,8 @@ def get_speed(model):
 
 def get_angle(model):
     k = 0
-    sin_p = np.zeros((201, 1))
-    cos_p = np.zeros((201, 1))
+    sin_p = np.zeros((301, 1))
+    cos_p = np.zeros((301, 1))
     for i in model:
         sin_p[k] = i[2]
         cos_p[k] = i[3]
@@ -30,15 +30,15 @@ def get_angle(model):
 
 def get_diff(model1,model2):
     k = 0
-    sin_p1 = np.zeros((201, 1))
-    cos_p1 = np.zeros((201, 1))
+    sin_p1 = np.zeros((301, 1))
+    cos_p1 = np.zeros((301, 1))
     for i in model1:
         sin_p1[k] = i[2]
         cos_p1[k] = i[3]
         k += 1
     k = 0
-    sin_p2 = np.zeros((201, 1))
-    cos_p2 = np.zeros((201, 1))
+    sin_p2 = np.zeros((301, 1))
+    cos_p2 = np.zeros((301, 1))
     for i in model2:
         sin_p2[k] = i[2]
         cos_p2[k] = i[3]

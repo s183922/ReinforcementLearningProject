@@ -16,7 +16,7 @@ def render_(xs, env):
         env.render(x=x)
 
 def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, ddp = False):
-    N = 200 ## Simulation Time steps
+    N = 300 ## Simulation Time steps
     np.random.seed(1)
     dt = 0.05
     pole_length = 1.0
@@ -43,43 +43,41 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
             u[i] = np.copy(us[0])
 
         elif i == 0:
-            xs, us, J_hist = ilqr(env, N, x_current, n_iter=300, use_linesearch=True, verbose = True, ddp = ddp)
-            u[i] = np.copy(us[i])
-        else:
-            u[i] = np.copy(us[i])
+            xs, us, J_hist = ilqr(env, N+1, x_current, n_iter=300, use_linesearch=True, verbose = True, ddp = ddp)
+            u = np.copy(us)
+            x = np.vstack((np.asarray(x0), env.step(x0, us + np.random.normal(0, sigma, N+1).reshape(-1,1) , N_steps = N)))
+            x_model = xs[:-1]
 
 
 
-        #us += np.random.normal(0.0, scale=sigma, size=time_horizon_length).reshape(time_horizon_length,1)
 
-        """ Euler dynamics = bad """
-        if not RecedingHorizon:
-            x_ = env.f(x_, u[i], i)
-            x_model.append(x_)
-        else:
+
+        if  RecedingHorizon:
+            """ Euler dynamics = bad """
             x_ = env.f(x_current, u[i], i)
             x_model.append(x_)
-
-        u[i] += np.random.normal(0.0, scale=sigma, size=None)
-        """ Truer dynamics RK4 = good """
-        x_current = env.step(x_current, us, 1, u[i])[0]
-
-        x.append(x_current)
+            """ Truer dynamics RK4 = good """
+            us += np.random.normal(0, sigma, time_horizon_length).reshape(-1,1)
+            x_current = env.step(x_current, us, 1)[0]
+            x.append(x_current)
 
         #env.render(x_current)
-        print(f"Iteration {i}, x={x_current[0]}")
+        print(f"Iteration {i}, x={x[i][0]}")
 
     
-    #render_(x,env)
-    #env.viewer.close()
+#    render_(x,env)
+ #   env.viewer.close()
+
+  #  render_(x_model, env)
+  #  env.viewer.close()
     import os, sys; os.chdir(sys.path[0])
 
     ss = "ddp" if ddp else "ilqr"
-    ss1 = "mp" if RecedingHorizon else "no_mpc"
+    ss1 = "mpc" if RecedingHorizon else "no_mpc"
 
-    pickle.dump(x, open(f"Trajectories/xs_{ss}_{ss1}.pkl", "wb"))
-    pickle.dump(u, open(f"Trajectories/us_{ss}_{ss1}.pkl", "wb"))
-    pickle.dump(x_model, open(f"Trajectories/xs_predicted_{ss}_{ss1}.pkl", "wb"))
+    pickle.dump(x, open(f"Trajectories/xs_{ss}_{ss1}300.pkl", "wb"))
+    pickle.dump(u, open(f"Trajectories/us_{ss}_{ss1}300.pkl", "wb"))
+    pickle.dump(x_model, open(f"Trajectories/xs_predicted_{ss}_{ss1}300.pkl", "wb"))
     plt.plot(np.squeeze(x)[:, 4])
     plt.plot(np.squeeze(u))
     plt.legend(["Angle", "Action"],)
@@ -95,8 +93,8 @@ if __name__ == "__main__":
     time_horizon_length = 30  # Control Horizon
 
     # Test without receding horizon. This should fail for positive sigma.
-    cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
-    cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
+    #cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
+    #cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
     # Test with receding horizon. This should succeed even for positive sigma.
-    cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
+    #cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
     cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
