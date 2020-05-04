@@ -1,155 +1,51 @@
-import pickle
-from iLQR.cost import QRCost
-from iLQR.ilqr import *
-from get_values import get_angle, get_diff, plot_angle, plot_tan2, get_x
-from dp_cartpole_env import CartpoleSinCosEnvironment as d_env
+from load_trajectories import *
+from get_values import get_angle, get_diff, plot_angle, plot_tan2, get_x, plot_cost, get_speed, plot_speed
 
-dt = 0.05
-max_force = 5
-pole_length = 1.0
-action_size = 1
-goal_angle = 0
-init_angle =  np.pi
-x_goal = np.array([0.0, 0.0, np.sin(goal_angle), np.cos(goal_angle), 0.0])
-x0 = np.array([0, 0, np.sin(init_angle), np.cos(init_angle), 0])
-Q = np.diag([1, 0.01, 30, 30, 0.01])  # diag([1.0, 1.0, 1.0, 1.0, 1.0])
-R = 0.01 * np.eye(action_size)
-cost = QRCost(Q, R, QN=None, x_goal=x_goal)
-#env = d_env(dt, cost = cost,l=pole_length, min_bounds = - max_force, max_bounds = max_force)
-ss = pickle.load(open("Trajectories/xs_ilqr_no_mpc.pkl.pkl", "rb"))
+c1,c2,c3,c4 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
+c11,c22,c33,c44 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
+c_1,c_2,c_3,c_4 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
+c_11,c_22,c_33,c_44 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
 
-s= 1
-true_ilqr = get_x(pickle.load(open("Trajectories/xs_ilqr_no_mpc.pkl.pkl", "rb")))
-model_ilqr = get_x(pickle.load(open("Trajectories/xs_predicted_ilqr_no_mpc.pkl", "rb")))
-ilqr_actions = pickle.load(open("Trajectories/us_ilqr_no_mpc.pkl", "rb"))
+m1, m2, m3, m4 = get_x(true_ilqr),get_x(true_mpc),get_x(true_ddp_ilqr),get_x(true_ddp_mpc)
+m11, m22, m33, m44 = get_x(model_ilqr),get_x(model_mpc),get_x(model_ddp_ilqr),get_x(model_ddp_mpc)
 
-true_mpc = get_x(pickle.load(open("Trajectories/xs_ilqr_mp.pkl", "rb")))
-model_mpc = get_x(pickle.load(open("Trajectories/xs_predicted_ilqr_mp.pkl", "rb")))
-mpc_actions = pickle.load(open("Trajectories/us_ilqr_mp.pkl", "rb"))
-
-true_ddp_ilqr = get_x(pickle.load(open("Trajectories/xs_ddp_no_mpc.pkl", "rb")))
-model_ddp_ilqr = get_x(pickle.load(open("Trajectories/xs_predicted_ddp_no_mpc.pkl", "rb")))
-ddp_ilqr_actions = pickle.load(open("Trajectories/us_ddp_no_mpc.pkl", "rb"))
-
-true_ddp_mpc = get_x(pickle.load(open("Trajectories/xs_ddp_mp.pkl", "rb")))
-model_ddp_mpc = get_x(pickle.load(open("Trajectories/xs_predicted_ddp_mp.pkl", "rb")))
-ddp_mpc_actions = pickle.load(open("Trajectories/us_ddp_mp.pkl", "rb"))
-
-c1 = np.zeros((200,1))
-c2 = np.zeros((200,1))
-c3 = np.zeros((200,1))
-c4 = np.zeros((200, 1))
 for i in range(200):
-    c1[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c2[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c3[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
-    c4[i], _, _, _, _, _ = QRCost.g(self=cost, x=xx[i + 1], u=u[i + 1], i=None, terminal=False)
+    c1[i], _, _, _, _, _ = QRCost.g(self=cost, x=m1[i], u=ilqr_actions[i], i=None, terminal=False)
+    c2[i], _, _, _, _, _ = QRCost.g(self=cost, x= m2[i], u=mpc_actions[i], i=None, terminal=False)
+    c3[i], _, _, _, _, _ = QRCost.g(self=cost, x=m3[i], u=ddp_ilqr_actions[i], i=None, terminal=False)
+    c4[i], _, _, _, _, _ = QRCost.g(self=cost, x=m4[i], u=ddp_mpc_actions[i], i=None, terminal=False)
+    c11[i], c22[i],c33[i],c44[i] = np.sum(c1),np.sum(c2),np.sum(c3),np.sum(c4)
+    c_1[i], _, _, _, _, _ = QRCost.g(self=cost, x=m11[i], u=ilqr_actions[i], i=None, terminal=False)
+    c_2[i], _, _, _, _, _ = QRCost.g(self=cost, x=m22[i], u=mpc_actions[i], i=None, terminal=False)
+    c_3[i], _, _, _, _, _ = QRCost.g(self=cost, x=m33[i], u=ddp_ilqr_actions[i], i=None, terminal=False)
+    c_4[i], _, _, _, _, _ = QRCost.g(self=cost, x=m44[i], u=ddp_mpc_actions[i], i=None, terminal=False)
+    c_11[i], c_22[i], c_33[i], c_44[i] = np.sum(c_1), np.sum(c_2), np.sum(c_3), np.sum(c_4)
 
 sin_ilqr_p, cos_ilqr_p = get_angle(model_ilqr)
 sin_ilqr_t, cos_ilqr_t = get_angle(true_ilqr)
 sin_mpc_p, cos_mpc_p = get_angle(model_mpc)
 sin_mpc_t, cos_mpc_t = get_angle(true_mpc)
-sin_ilqr_d, cos_ilqr_d = get_diff(model_ilqr,true_ilqr)
-sin_mpc_d, cos_mpc_d = get_diff(model_mpc,true_mpc)
+sin_ddp_p, cos_ddp_p = get_angle(model_ddp_ilqr)
+sin_ddp_t, cos_ddp_t = get_angle(true_ddp_ilqr)
+sin_ddp1_p, cos_ddp1_p = get_angle(model_ddp_mpc)
+sin_ddp1_t, cos_ddp1_t = get_angle(true_ddp_mpc)
 
-x_ilqr_t = get_x(true_ilqr)
-x_mpc_t = get_x(true_mpc)
+ilqr_speed = get_speed(true_ilqr)
+mpc_speed = get_speed(true_mpc)
+ddp_speed = get_speed(true_ddp_ilqr)
+ddp1_speed = get_speed(true_ddp_mpc)
 
-J = np.zeros((201,1))
-J1 = np.zeros((201,1))
-for i in range(201):
-    J[i] = compute_J(env, x_ilqr_t[i], ilqr_actions[i])
-    J1[i] = compute_J(env, x_mpc_t[i], mpc_actions[i])
-N = 200
-L1, L_x1, L_u1, L_xx1, L_ux1, L_uu1 = [None] * (N + 1), [None] * (N + 1), [None] * (N), [None] * (N + 1), [None] * (N), [None] * (N)
-L2, L_x2, L_u2, L_xx2, L_ux2, L_uu2 = [None] * (N + 1), [None] * (N + 1), [None] * (N), [None] * (N + 1), [None] * (N), [None] * (N)
+plot_speed(ilqr_speed,mpc_speed,"iLQR","iLQR MPC",fig_nr=9,ylabel="X'",fig="speed_ilqr_mpc")
+plot_speed(ddp_speed,ddp1_speed,"DDP","DDP MPC",fig_nr=10,ylabel="X'",fig="speed_ddp_ddpmpc")
 
-for i in range(200):
-    L1[i], L_x1[i], L_u1[i], L_xx1[i], L_ux1[i], L_uu1[i] = env.g(x_ilqr_t[i], ilqr_actions[i], i, terminal=False,compute_gradients=True)
-    L2[i], L_x2[i], L_u2[i], L_xx2[i], L_ux2[i], L_uu2[i] = env.g(x_mpc_t[i], mpc_actions[i], i, terminal=False,compute_gradients=True)
+plot_cost(c1,c2,c3,c4,title="Actual cost pr iteration",fig="cost_pr_iteration",fig_nr=1)
+plot_cost(c11,c22,c33,c44,title="Actual accumulated cost",fig="accumulated_cost",fig_nr=2)
+plot_cost(c_1,c_2,c_3,c_4,title="Predicted cost pr iteration",fig="cost_pr_iteration_p",fig_nr=3)
+plot_cost(c_11,c_22,c_33,c_44,title="Predicted accumulated cost",fig="accumulated_cost_p",fig_nr=4)
 
-plt.plot(L1)
-plt.xlabel("Time steps")
-plt.ylabel("J")
-plt.title("Cost pr iteration")
-plt.show()
+plot_tan2(sin_ilqr_p,cos_ilqr_p,sin_ilqr_t,cos_ilqr_t,title="iLQR trajectory theta",fig_nr=5,fig="ilqr_theta")
+plot_tan2(sin_mpc_p,cos_mpc_p,sin_mpc_t,cos_mpc_t,title="iLQR MPC trajectory theta",fig_nr=6,fig="mpc_theta")
+plot_tan2(sin_ddp_p,cos_ddp_p,sin_ddp_t,cos_ddp_t,title="DDP trajectory theta",fig_nr=7,fig="ddp_theta")
+plot_tan2(sin_ddp1_p,cos_ddp1_p,sin_ddp1_t,cos_ddp1_t,title="DDP MPC trajectory theta",fig_nr=8,fig="ddp1_theta"
 
-plt.plot(ilqr_cost)
-plt.xlabel("Time steps")
-plt.ylabel("J")
-plt.title("Cost pr iteration")
-plt.show()
 
-plt.plot(L2)
-plt.xlabel("Time steps")
-plt.ylabel("J")
-plt.title("Cost pr iteration")
-plt.show()
-
-plot_tan2(sin_ilqr_p,cos_ilqr_p,sin_ilqr_t,cos_ilqr_t)
-plt.title("iLQR trajectory")
-plt.show()
-
-plot_tan2(sin_mpc_p,cos_mpc_p,sin_mpc_t,cos_mpc_t)
-plt.title("MPC trajectory")
-plt.show()
-
-plt.plot(ilqr_cost)
-plt.xlabel("Time steps")
-plt.ylabel("J")
-plt.title("Cost pr iteration")
-plt.show()
-
-plt.plot(mpc_cost)
-plt.xlabel("Time steps")
-plt.ylabel("J")
-plt.title("Cost pr iteration")
-plt.show()
-
-plot_angle(sin_ilqr_p,sin_ilqr_t)
-plt.title("iLQR trajectory sinus")
-plt.ylabel("Sin to angle")
-plt.show()
-plot_angle(cos_ilqr_p,cos_ilqr_t)
-plt.title("iLQR trajectory cosinus")
-plt.ylabel("Cos to angle")
-plt.show()
-plot_angle(sin_mpc_p,sin_mpc_t)
-plt.title("MPC trajectory sinus")
-plt.ylabel("Sin to angle")
-plt.show()
-plot_angle(cos_mpc_p,cos_mpc_t)
-plt.title("MPC trajectory cosinus")
-plt.ylabel("Cos to angle")
-plt.show()
-
-plt.plot(sin_ilqr_d)
-plt.title("Difference in predicted and actual sin to angle iLQR")
-plt.xlabel("Time steps")
-plt.ylabel("Difference")
-plt.show()
-
-plt.plot(cos_ilqr_d)
-plt.title("Difference in predicted and actual cos to angle iLQR")
-plt.xlabel("Time steps")
-plt.ylabel("Difference")
-plt.show()
-
-plt.plot(sin_mpc_d)
-plt.title("Difference in predicted and actual sin to angle MPC")
-plt.xlabel("Time steps")
-plt.ylabel("Difference")
-plt.show()
-
-plt.plot(cos_mpc_d)
-plt.title("Difference in predicted and actual cos to angle MPC")
-plt.xlabel("Time steps")
-plt.ylabel("Difference")
-plt.show()
-
-#v_ilqr_t = true_ilqr[:][2:4]
-
-#for x in true_mpc:
-#    env.render(x)
-#    time.sleep(0.06)
-#env.viewer.close()
