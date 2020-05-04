@@ -12,7 +12,7 @@ def get_x(model):
 
 def get_speed(model):
     k = 0
-    x = np.zeros((201, 1))
+    x = np.zeros((301, 1))
     for i in model:
         x[k] = i[1]
         k += 1
@@ -76,6 +76,48 @@ def plot_tan2(sin1,cos1,sin2,cos2,title,fig,fig_nr):
     plt.savefig(fig)
     plt.show()
 
+def plot_theta(model1,model2,m1,m2,title,fig,fig_nr):
+    k = 0
+    x1 = np.zeros((301, 1))
+    for i in model1:
+        x1[k] = i[4]
+        k += 1
+    k = 0
+    x2 = np.zeros((301, 1))
+    for i in model2:
+        x2[k] = i[4]
+        k += 1
+    plt.figure(fig_nr)
+    plt.plot(x1)
+    plt.plot(x2)
+    plt.legend([m1, m2])
+    plt.xlabel("Time steps")
+    plt.ylabel("theta'")
+    plt.title(title)
+    plt.savefig(fig)
+    plt.show()
+
+def plot_position(model1,model2,m1,m2,title,fig,fig_nr):
+    k = 0
+    x1 = np.zeros((301, 1))
+    for i in model1:
+        x1[k] = i[0]
+        k += 1
+    k = 0
+    x2 = np.zeros((301, 1))
+    for i in model2:
+        x2[k] = i[0]
+        k += 1
+    plt.figure(fig_nr)
+    plt.plot(x1)
+    plt.plot(x2)
+    plt.legend([m1, m2])
+    plt.xlabel("Time steps")
+    plt.ylabel("Position x")
+    plt.title(title)
+    plt.savefig(fig)
+    plt.show()
+
 def plot_cost(c1,c2,c3,c4,title,fig,fig_nr):
     plt.figure(fig_nr)
     plt.plot(c1)
@@ -83,7 +125,7 @@ def plot_cost(c1,c2,c3,c4,title,fig,fig_nr):
     plt.plot(c3)
     plt.plot(c4)
     plt.xlabel("Time steps")
-    plt.ylabel("log QR Cost")
+    plt.ylabel("QR Cost")
     plt.semilogy()
     plt.legend(["iLQR", "iLQR MPC", "DDP", "DDP MPC"])
     plt.title(title)

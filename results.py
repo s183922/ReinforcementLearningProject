@@ -1,15 +1,15 @@
 from load_trajectories import *
-from get_values import get_angle, get_diff, plot_angle, plot_tan2, get_x, plot_cost, get_speed, plot_speed
+from get_values import get_angle, get_diff, plot_angle, plot_tan2, get_x, plot_cost, get_speed, plot_speed, plot_theta,plot_position
 
-c1,c2,c3,c4 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
-c11,c22,c33,c44 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
-c_1,c_2,c_3,c_4 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
-c_11,c_22,c_33,c_44 = np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1)),np.zeros((200,1))
+c1,c2,c3,c4 = np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1))
+c11,c22,c33,c44 = np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1))
+c_1,c_2,c_3,c_4 = np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1))
+c_11,c_22,c_33,c_44 = np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1)),np.zeros((300,1))
 
 m1, m2, m3, m4 = get_x(true_ilqr),get_x(true_mpc),get_x(true_ddp_ilqr),get_x(true_ddp_mpc)
 m11, m22, m33, m44 = get_x(model_ilqr),get_x(model_mpc),get_x(model_ddp_ilqr),get_x(model_ddp_mpc)
 
-for i in range(200):
+for i in range(300):
     c1[i], _, _, _, _, _ = QRCost.g(self=cost, x=m1[i], u=ilqr_actions[i], i=None, terminal=False)
     c2[i], _, _, _, _, _ = QRCost.g(self=cost, x= m2[i], u=mpc_actions[i], i=None, terminal=False)
     c3[i], _, _, _, _, _ = QRCost.g(self=cost, x=m3[i], u=ddp_ilqr_actions[i], i=None, terminal=False)
@@ -39,12 +39,20 @@ ddp1_speed = get_speed(true_ddp_mpc)
 plot_speed(ilqr_speed,mpc_speed,"iLQR","iLQR MPC",fig_nr=9,ylabel="X'",fig="speed_ilqr_mpc")
 plot_speed(ddp_speed,ddp1_speed,"DDP","DDP MPC",fig_nr=10,ylabel="X'",fig="speed_ddp_ddpmpc")
 
-plot_cost(c1,c2,c3,c4,title="Actual cost pr iteration",fig="cost_pr_iteration",fig_nr=1)
-plot_cost(c11,c22,c33,c44,title="Actual accumulated cost",fig="accumulated_cost",fig_nr=2)
-plot_cost(c_1,c_2,c_3,c_4,title="Predicted cost pr iteration",fig="cost_pr_iteration_p",fig_nr=3)
-plot_cost(c_11,c_22,c_33,c_44,title="Predicted accumulated cost",fig="accumulated_cost_p",fig_nr=4)
+plot_cost(c1,c2,c3,c4,title="Actual cost pr iteration (log scale)",fig="cost_pr_iteration",fig_nr=1)
+plot_cost(c11,c22,c33,c44,title="Actual accumulated cost (log scale)",fig="accumulated_cost",fig_nr=2)
+plot_cost(c_1,c_2,c_3,c_4,title="Predicted cost pr iteration (log scale)",fig="cost_pr_iteration_p",fig_nr=3)
+plot_cost(c_11,c_22,c_33,c_44,title="Predicted accumulated cost (log scale)",fig="accumulated_cost_p",fig_nr=4)
 
 plot_tan2(sin_ilqr_p,cos_ilqr_p,sin_ilqr_t,cos_ilqr_t,title="iLQR trajectory theta",fig_nr=5,fig="ilqr_theta")
 plot_tan2(sin_mpc_p,cos_mpc_p,sin_mpc_t,cos_mpc_t,title="iLQR MPC trajectory theta",fig_nr=6,fig="mpc_theta")
 plot_tan2(sin_ddp_p,cos_ddp_p,sin_ddp_t,cos_ddp_t,title="DDP trajectory theta",fig_nr=7,fig="ddp_theta")
 plot_tan2(sin_ddp1_p,cos_ddp1_p,sin_ddp1_t,cos_ddp1_t,title="DDP MPC trajectory theta",fig_nr=8,fig="ddp1_theta")
+
+plot_theta(true_ilqr,true_mpc,"iLQR","iLQR MPC","theta'",fig="theta_d_ilqr",fig_nr=11)
+plot_theta(true_ddp_ilqr,true_ddp_mpc,"DDP","DDP MPC","theta'",fig="theta_d_ddp",fig_nr=12)
+
+plot_position(true_ilqr,true_mpc,"iLQR","iLQR MPC","Position x at time step n",fig="x_ilqr",fig_nr=13)
+plot_position(true_ddp_ilqr,true_ddp_mpc,"DDP","DDP MPC","Position x at time step n",fig="x_ddp",fig_nr=14)
+plot_position(true_ilqr,model_ilqr,"Actual position","Predicted position","Position x at time step n for iLQR",fig="x_ilqr_p",fig_nr=15)
+plot_position(true_ddp_ilqr,model_ddp_ilqr,"Actual position","Predicted position","Position x at time step n for DDP",fig="x_ddp_p",fig_nr=16)
