@@ -43,7 +43,7 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
             u[i] = np.copy(us[0])
 
         elif i == 0:
-            xs, us, J_hist = ilqr(env, N+1, x_current, n_iter=300, use_linesearch=True, verbose = True, ddp = ddp)
+            xs, us, J_hist = ilqr(env, N+1, x_current, n_iter=2000, use_linesearch=True, verbose = True, ddp = ddp)
             u = np.copy(us)
             x = np.vstack((np.asarray(x0), env.step(x0, us + np.random.normal(0, sigma, N+1).reshape(-1,1) , N_steps = N)))
             x_model = xs[:-1]
@@ -65,11 +65,11 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
         print(f"Iteration {i}, x={x[i][0]}")
 
     
-#    render_(x,env)
- #   env.viewer.close()
+    #render_(x_model,env)
+    #env.viewer.close()
 
-  #  render_(x_model, env)
-  #  env.viewer.close()
+    render_(x, env)
+    env.viewer.close()
     import os, sys; os.chdir(sys.path[0])
 
     ss = "ddp" if ddp else "ilqr"
@@ -89,12 +89,12 @@ def cartpole_balance(RecedingHorizon=True, sigma=0.0, time_horizon_length=30, dd
 
 
 if __name__ == "__main__":
-    sigma = 2
+    sigma = 0
     time_horizon_length = 30  # Control Horizon
 
     # Test without receding horizon. This should fail for positive sigma.
-    #cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
+    cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
     #cartpole_balance(RecedingHorizon=False, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
     # Test with receding horizon. This should succeed even for positive sigma.
     #cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = False)
-    cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)
+    #cartpole_balance(RecedingHorizon=True, sigma=sigma, time_horizon_length=time_horizon_length, ddp = True)

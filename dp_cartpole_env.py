@@ -111,7 +111,9 @@ class CartpoleSinCosEnvironment(DPSymbolicEnvironment):
         sin_theta = sym.sin(theta)
         cos_theta = sym.cos(theta)
         theta_dot = xs[3]
+
         F = sym.tanh(us[0]) * (max_bounds - min_bounds) / 2.0
+
         # Define dynamics model as per Razvan V. Florian's
         # "Correct equations for the dynamics of the cart-pole system".
         # Friction is neglected.
